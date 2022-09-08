@@ -1,0 +1,1 @@
+/soa-entorno-integracion/qemu/qemu_stm32/Makefile.target
