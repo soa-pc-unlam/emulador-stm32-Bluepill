@@ -1,0 +1,15 @@
+<component name="libraryTable">
+  <library name="Gradle: com.android.support:support-compat:26.1.0@aar">
+    <CLASSES>
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/0008c1d7d980cf8c9548d2ba6e1a8038/res" />
+      <root url="jar://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/0008c1d7d980cf8c9548d2ba6e1a8038/jars/classes.jar!/" />
+      <root url="file://$USER_HOME$/Desktop/2doCuat 2021/TP2/Martes/Grupo 1/HelperCapacity/TP2-CODIGO/aplicacionmobileSOA/caches/transforms-2/files-2.1/5f0152816069c931ff3e04a390975bcb/AndroidManifest.xml" />
+      <root url="jar://$USER_HOME$/Desktop/2doCuat 2021/TP2/Martes/Grupo 1/HelperCapacity/TP2-CODIGO/aplicacionmobileSOA/caches/transforms-2/files-2.1/5f0152816069c931ff3e04a390975bcb/jars/classes.jar!/" />
+      <root url="file://$USER_HOME$/Desktop/2doCuat 2021/TP2/Martes/Grupo 1/HelperCapacity/TP2-CODIGO/aplicacionmobileSOA/caches/transforms-2/files-2.1/5f0152816069c931ff3e04a390975bcb/res" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.android.support/support-compat/26.1.0/73bfdb5cca1949a51219d3676700996990ea3b52/support-compat-26.1.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
