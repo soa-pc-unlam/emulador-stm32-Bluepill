@@ -21,6 +21,8 @@ int main(void)
         send_byte('t');
         send_byte(':');
         send_byte(b);
-        send_byte('\n');
+	send_byte('\r');
+	send_byte('\n');
     }
-}
+return 0;    
+}	

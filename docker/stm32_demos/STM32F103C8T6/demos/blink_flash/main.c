@@ -12,9 +12,9 @@ int main(void)
     init_led();
 
     while(1) {
-    	GPIO_WriteBit(GPIOC,GPIO_Pin_13,Bit_SET);
-       busyLoop(500000);
+       GPIO_WriteBit(GPIOC,GPIO_Pin_13,Bit_SET);
+       busyLoop(5000000);
        GPIO_WriteBit(GPIOC,GPIO_Pin_13,Bit_RESET);
-       busyLoop(500000);
+       busyLoop(5000000);
     }
 }

@@ -3,6 +3,20 @@
 
 #include <stdlib.h>
 
+
+void my_sleep(int secs) {
+  #define STEPS_PER_SEC 65000000
+  unsigned int i,s;
+  for (s=0; s < secs; s++) {
+    for (i=0; i < STEPS_PER_SEC; i++) {
+       // skip CPU cycle or any other statement(s) for making loop 
+       // untouched by C compiler code optimizations
+       asm("nop");
+    }
+  }
+}
+
+
 /* Flag whenever the button is pressed.
  * Note that the interrupt handler is initialized to only
  * fire when the button is pressed, not released.prueba
@@ -100,6 +114,7 @@ int main(void)
     int mode = 1;
     while(1) {
         uint16_t adc_value;
+        my_sleep(1);
         switch(mode) {
             case 1:                
             	//for BluePill is the same channel for that stm32p103
@@ -132,6 +147,7 @@ int main(void)
                 //send_adc_sample(adc_value);
                 send_byte('\n');
                 break;
+            
         }
 
         /* A button has been pressed.  Update the mode. */

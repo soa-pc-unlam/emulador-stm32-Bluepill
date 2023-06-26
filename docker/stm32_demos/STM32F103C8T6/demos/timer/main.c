@@ -115,7 +115,7 @@ int main(void)
             rs232_print_str("  ");
             rs232_print_str("Raw Count=");
             send_number(curr_raw_count, 10);
-            rs232_print_str("\n");
+            rs232_print_str("\r\n");
             last_second_count = curr_second_count;
         }
 

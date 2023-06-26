@@ -15,13 +15,9 @@ CP	  = arm-none-eabi-objcopy
 OD	  = arm-none-eabi-objdump
 
 # Declare command line flags
-CORE_CFLAGS = -I./ -I$(CORE_SRC) -I$(DEVICE_SRC) -I$(STD_PERIPH)/inc -Icommon -fno-common -O0 -g -mcpu=cortex-m3 -mthumb
-
-CFLAGS_LINK = -Wno-implicit -Wl,-Tmain.ld -nostartfiles  $(CORE_CFLAGS)
-CFLAGS_ASM =  -O0 -g -mcpu=cortex-m3 -mthumb  -Wno-implicit -Wl, -x assembler-with-cpp 
-
-CFLAS_PROFILING=-specs=nano.specs -specs=rdimon.specs -specs=nosys.specs -pg   
-#CFLAS_PROFILING= -c $(FILE_S)
+CORE_CFLAGS = -I./ -I$(CORE_SRC) -I$(DEVICE_SRC) -I$(STD_PERIPH)/inc -Icommon -fno-common -O0 -g -mcpu=cortex-m3 -mthumb 
+CFLAGS  = $(CORE_CFLAGS) -c 
+CFLAGS_LINK = -Wl,-Tmain.ld -nostartfiles $(CORE_CFLAGS)
 ASFLAGS = -mcpu=cortex-m3 -mthumb -g
 LDFLAGS = -Tmain.ld -nostartfiles
 CPFLAGS = -Obinary
@@ -50,11 +46,6 @@ COMMON_FILES += $(STD_PERIPH_SRC)/stm32f10x_tim.c
 COMMON_FILES += $(STD_PERIPH_SRC)/stm32f10x_rtc.c
 COMMON_FILES += $(STD_PERIPH_SRC)/stm32f10x_dac.c
 COMMON_FILES += $(STD_PERIPH_SRC)/misc.c
-
-PROFILING_FILES += common/profiling/profil.c
-PROFILING_FILES += common/profiling/gmon.c
-
-PROFILING_FILES += common/profiling/profiler.S
 
 # List all demos
 DEMOS =  adc_single
@@ -139,29 +130,28 @@ DBG:
 # QEMU run targets
 $(QEMU_RUN_TARGETS): %_QEMURUN : %_ALL
 	-killall -q qemu-system-arm
-	#$(QEMU_ARM_DIR)qemu-system-arm -M stm32-f103c8 -kernel $*/main.bin
-	qemu-system-arm -M stm32-f103c8 -kernel $*/main.bin
-	
+	$(QEMU_ARM_DIR)qemu-system-arm -M stm32-f103c8 -kernel $*/main.bin
+
 $(QEMU_RUN_PTY_TARGETS): %_QEMURUN_PTY : %_ALL
 	-killall -q qemu-system-arm
-	 qemu-system-arm -M stm32-f103c8 -kernel $*/main.bin -serial pty
+	$(QEMU_ARM_DIR)qemu-system-arm -M stm32-f103c8 -kernel $*/main.bin -serial pty
 	
 $(QEMU_RUN_TEL_TARGETS): %_QEMURUN_TEL : %_ALL
 	-killall -q qemu-system-arm
-	 emu-system-arm -M stm32-f103c8 -kernel $*/main.bin -serial tcp::7777,server
+	$(QEMU_ARM_DIR)qemu-system-arm -M stm32-f103c8 -kernel $*/main.bin -serial tcp::7777,server
 
 # QEMU debug targets
 $(QEMU_DBG_TARGETS): %_QEMUDBG : %_ALL
 	-killall -q qemu-system-arm
-	 qemu-system-arm -M stm32-f103c8 -gdb tcp::3333 -S -kernel $*/main.bin
+	$(QEMU_ARM_DIR)qemu-system-arm -M stm32-f103c8 -gdb tcp::3333 -S -kernel $*/main.bin
 
 $(QEMU_DBG_PTY_TARGETS): %_QEMUDBG_PTY : %_ALL
 	-killall -q qemu-system-arm
-	 qemu-system-arm -M stm32-f103c8 -gdb tcp::3333 -S -kernel $*/main.bin -serial pty
+	$(QEMU_ARM_DIR)qemu-system-arm -M stm32-f103c8 -gdb tcp::3333 -S -kernel $*/main.bin -serial pty
 	
 $(QEMU_DBG_TEL_TARGETS): %_QEMUDBG_TEL : %_ALL
 	-killall -q qemu-system-arm
-	 qemu-system-arm -M stm32-f103c8 -gdb tcp::3333 -S -kernel $*/main.bin -serial tcp::7777,server
+	$(QEMU_ARM_DIR)qemu-system-arm -M stm32-f103c8 -gdb tcp::3333 -S -kernel $*/main.bin -serial tcp::7777,server
 	
 # Note: Use this command to run QEMU in low-level debug mode:
 #    qemu-system-arm -cpu cortex-m3 -M stm32-f103c8 -nographic -singlestep -kernel main.bin -d in_asm,out_asm,exec,cpu,int,op,op_opt
@@ -191,86 +181,11 @@ blink_flash_asm/main.o: blink_flash_asm/main.s
 adc_single/main.elf: adc_single/main.c
 adc_single/main.elf: $(COMMON_FILES)
 	$(CC) $(CFLAGS_LINK) -Iadc_single/ -o $@ $^
-#=======================================================
-COMMON_FILES_O = $(CORE_SRC)/core_cm3.o
-COMMON_FILES_O += $(DEVICE_SRC)/system_stm32f10x.o
-COMMON_FILES_O += $(DEVICE_SRC)/startup/gcc_ride7/startup_stm32f10x_md.o
-COMMON_FILES_O += common/stm32_f103.o
-COMMON_FILES_O += common/myprintk.o
-COMMON_FILES_O += $(STD_PERIPH_SRC)/stm32f10x_rcc.o
-COMMON_FILES_O += $(STD_PERIPH_SRC)/stm32f10x_gpio.o
-COMMON_FILES_O += $(STD_PERIPH_SRC)/stm32f10x_usart.o
-COMMON_FILES_O += $(STD_PERIPH_SRC)/stm32f10x_exti.o
-COMMON_FILES_O += $(STD_PERIPH_SRC)/stm32f10x_adc.o
-COMMON_FILES_O += $(STD_PERIPH_SRC)/stm32f10x_tim.o
-COMMON_FILES_O += $(STD_PERIPH_SRC)/stm32f10x_rtc.o
-COMMON_FILES_O += $(STD_PERIPH_SRC)/stm32f10x_dac.o
-COMMON_FILES_O += $(STD_PERIPH_SRC)/misc.o
-#=====================================================
-$(CORE_SRC)/core_cm3.o: $(CORE_SRC)/core_cm3.c
-	$(CC) $(CFLAGS_LINK) -Ibutton/  -c -o $@ $^
-
-$(DEVICE_SRC)/system_stm32f10x.o: $(DEVICE_SRC)/system_stm32f10x.c
-	$(CC) $(CFLAGS_LINK) -Ibutton/  -c -o $@ $^
-
-$(DEVICE_SRC)/startup/gcc_ride7/startup_stm32f10x_md.o: $(DEVICE_SRC)/startup/gcc_ride7/startup_stm32f10x_md.s
-	$(CC) $(CFLAGS_LINK) -Ibutton/  -c -o $@ $^
-
-common/stm32_f103.o: common/stm32_f103.c
-	$(CC) $(CFLAGS_LINK) -Ibutton/  -c -o $@ $^
-
-common/myprintk.o: common/myprintk.c
-	$(CC) $(CFLAGS_LINK) -Ibutton/  -c -o $@ $^
-
-$(STD_PERIPH_SRC)/stm32f10x_rcc.o:  $(STD_PERIPH_SRC)/stm32f10x_rcc.c
-	$(CC) $(CFLAGS_LINK) -Ibutton/  -c -o $@ $^
 
 
- $(STD_PERIPH_SRC)/stm32f10x_gpio.o:  $(STD_PERIPH_SRC)/stm32f10x_gpio.c
-	$(CC) $(CFLAGS_LINK) -Ibutton/  -c -o $@ $^
-	
-$(STD_PERIPH_SRC)/stm32f10x_usart.o: $(STD_PERIPH_SRC)/stm32f10x_usart.c
-	$(CC) $(CFLAGS_LINK) -Ibutton/  -c -o $@ $^
-
- $(STD_PERIPH_SRC)/stm32f10x_exti.o:  $(STD_PERIPH_SRC)/stm32f10x_exti.c
-	$(CC) $(CFLAGS_LINK) -Ibutton/  -c -o $@ $^	
-	
-$(STD_PERIPH_SRC)/stm32f10x_adc.o: $(STD_PERIPH_SRC)/stm32f10x_adc.c
-	$(CC) $(CFLAGS_LINK) -Ibutton/  -c -o $@ $^
-	
-$(STD_PERIPH_SRC)/stm32f10x_tim.o:$(STD_PERIPH_SRC)/stm32f10x_tim.c
-	$(CC) $(CFLAGS_LINK) -Ibutton/  -c -o $@ $^
-	
-$(STD_PERIPH_SRC)/stm32f10x_rtc.o:$(STD_PERIPH_SRC)/stm32f10x_rtc.c
-	$(CC) $(CFLAGS_LINK) -Ibutton/  -c -o $@ $^
-
-$(STD_PERIPH_SRC)/stm32f10x_dac.o:$(STD_PERIPH_SRC)/stm32f10x_dac.c
-	$(CC) $(CFLAGS_LINK) -Ibutton/  -c -o $@ $^						
-	
-$(STD_PERIPH_SRC)/misc.o:$(STD_PERIPH_SRC)/misc.c
-	$(CC) $(CFLAGS_LINK) -Ibutton/  -c -o $@ $^			
-#=======================================================
-
-common/profiling/profiler.o: common/profiling/profiler.S
-	$(CC) $(CFLAGS_ASM) -c -o $@ $^
-
-common/profiling/gmon.o: common/profiling/gmon.c
-	$(CC) $(CFLAGS_LINK) -L "common/profiling"  -c -o $@ $^
-
-common/profiling/profil.o: common/profiling/profil.c
-	$(CC) $(CFLAGS_LINK) -c -o $@ $^
-	
-button/common.o: $(COMMON_FILES)
-
-button/main.o: button/main.c 
-	$(CC) $(CFLAGS_LINK) -Ibutton/  --specs=nano.specs --specs=rdimon.specs -pg -c -o button/main.o button/main.c  
-
-button/common.o: $(COMMON_FILES)
-	$(CC) $(CFLAGS_LINK) -Ibutton/  -o button/common.o $(COMMON_FILES) 
-
-
-button/main.elf:  common/profiling/profiler.o common/profiling/gmon.o common/profiling/profil.o  $(COMMON_FILES_O) button/main.o
-	$(CC) -mthumb -Og -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -ffreestanding -fno-move-loop-invariants -Wall -Wextra --specs=nano.specs --specs=rdimon.specs  -g3  -T common/profiling/mem.ld -T common/profiling/libs.ld -T common/profiling/sections.ld  -Xlinker --gc-sections -o $@ $^  
+button/main.elf: button/main.c
+button/main.elf: $(COMMON_FILES)
+	$(CC) $(CFLAGS_LINK) -Ibutton/ -o $@ $^
 
 
 button_int/main.elf: button_int/main.c
