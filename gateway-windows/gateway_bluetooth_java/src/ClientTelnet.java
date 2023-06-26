@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.io.InputStreamReader;
@@ -43,19 +44,41 @@ public class ClientTelnet
             e.printStackTrace(); 
         }
     }  
-    public   String receiveDataFromQemu()
-    {
-        String aux=null;
-        
-        try
-        {
-            aux=in.readLine();
-        }
-        catch (Exception e) 
-        {
+    
+    public  String receiveDataFromQemu()
+     {
+        StringBuilder sb = new StringBuilder();
+        //BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        long startTime = System.currentTimeMillis();
+        long timeout = 5000; // Tiempo límite en milisegundos (5 segundos en este caso)
+
+        try {
+            int character;
+            boolean foundNewLine = false;
+            
+            while ((character = in.read()) != -1) 
+            {
+                sb.append((char) character);
+                
+                if (character == '\n') 
+                {
+                    foundNewLine = true;
+                    break;
+                }   
+                
+                if (System.currentTimeMillis() - startTime > timeout) {
+                    break;
+                }
+            }
+            
+            /*if (!foundNewLine) {
+                System.out.println("Timeout reached. Returning partial result.");
+            }*/
+        } catch (IOException e) {
             e.printStackTrace();
-        } 
-        return aux;
+        }
+        
+        return sb.toString();
     }
 
     public void socketClose()

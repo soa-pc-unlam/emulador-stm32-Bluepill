@@ -5,7 +5,9 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothDevice;
+import android.content.DialogInterface;
 import android.os.Bundle;
 
 import android.content.BroadcastReceiver;
@@ -81,6 +83,42 @@ public class DeviceListActivity extends Activity
         }
     }
 
+    private void callActivityComunication(BluetoothDevice device){
+        //se inicia el Activity de comunicacion con el bluethoot, para transferir los datos.
+        //Para eso se le envia como parametro la direccion(MAC) del bluethoot Arduino
+        String direccionBluethoot = device.getAddress();
+        Intent i = new Intent(DeviceListActivity.this, activity_comunicacion.class);
+        i.putExtra("Direccion_Bluethoot", direccionBluethoot);
+
+        startActivity(i);
+    }
+
+    private void showConfirmDialog(BluetoothDevice device){
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+        alertDialog.setMessage("Conexion existente");
+        alertDialog.setTitle("¿Desea usar esta conexion?");
+        alertDialog.setIcon(android.R.drawable.ic_dialog_alert);
+        alertDialog.setCancelable(false);
+        alertDialog.setPositiveButton("Sí", new DialogInterface.OnClickListener()
+        {
+            public void onClick(DialogInterface dialog, int which)
+            {
+                //código Java si se ha pulsado sí
+                callActivityComunication(device);
+            }
+        });
+        alertDialog.setNegativeButton("No", new DialogInterface.OnClickListener()
+        {
+            public void onClick(DialogInterface dialog, int which)
+            {
+                //código java si se ha pulsado no
+                //Si esta emparejado,quiere decir que se selecciono desemparjar y entonces se le desempareja
+                unpairDevice(device);
+            }
+        });
+        alertDialog.show();
+    }
+
     private void unpairDevice(BluetoothDevice device) {
         try {
             Method method = device.getClass().getMethod("removeBond", (Class[]) null);
@@ -101,8 +139,9 @@ public class DeviceListActivity extends Activity
             //Se checkea si el sipositivo ya esta emparejado
             if (device.getBondState() == BluetoothDevice.BOND_BONDED)
             {
-                //Si esta emparejado,quiere decir que se selecciono desemparjar y entonces se le desempareja
-                unpairDevice(device);
+
+                showConfirmDialog(device);
+
             }
             else
             {
@@ -135,15 +174,8 @@ public class DeviceListActivity extends Activity
                 {
                     //Si se detecto que se puedo emparejar el bluethoot
                     showToast("Emparejado");
-                    BluetoothDevice dispositivo = (BluetoothDevice) mAdapter.getItem(posicionListBluethoot);
-
-                    //se inicia el Activity de comunicacion con el bluethoot, para transferir los datos.
-                    //Para eso se le envia como parametro la direccion(MAC) del bluethoot Arduino
-                    String direccionBluethoot = dispositivo.getAddress();
-                    Intent i = new Intent(DeviceListActivity.this, activity_comunicacion.class);
-                    i.putExtra("Direccion_Bluethoot", direccionBluethoot);
-
-                    startActivity(i);
+                    BluetoothDevice device = (BluetoothDevice) mAdapter.getItem(posicionListBluethoot);
+                    callActivityComunication(device);
 
                 }  //si se detrecto un desaemparejamiento
                     else if (state == BluetoothDevice.BOND_NONE && prevState == BluetoothDevice.BOND_BONDED) {

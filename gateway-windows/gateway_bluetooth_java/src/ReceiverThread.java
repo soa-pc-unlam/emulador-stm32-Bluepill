@@ -1,22 +1,17 @@
-import java.io.IOException;
-import java.io.InputStream;
 
-import javax.microedition.io.StreamConnection;
 
 public class ReceiverThread extends Thread
 {
-    private InputStream  inputStream;
-    private StreamConnection connection;
+ 
     private ClientTelnet clientTelnet;
-           
-        public ReceiverThread(StreamConnection  connection, ClientTelnet client)
+    private ClientBluetooth clientBluetooth;
+
+        public ReceiverThread(ClientTelnet clientTelnet,ClientBluetooth clientBluetooth)
         {
             try
             {
-
-                this.inputStream =connection.openInputStream(); 
-                this.connection=connection;
-                this.clientTelnet=client;
+                this.clientTelnet=clientTelnet;
+                this.clientBluetooth=clientBluetooth;
             }
             catch (Exception e) 
             {
@@ -32,7 +27,7 @@ public class ReceiverThread extends Thread
             while (!Thread.currentThread().isInterrupted())
             {
                 //recive datos del bluetooth
-                readMessage=receiveDataFromBluetooth();
+                readMessage=clientBluetooth.receiveDataFromBluetooth();
                 
                 if(readMessage.equals(null))
                     break;
@@ -40,51 +35,23 @@ public class ReceiverThread extends Thread
                 clientTelnet.sendDataToQemu(readMessage);
 
                 System.out.println(readMessage);
-        
+                
             }
 
            closeConnection();
             
         }
 
-        public String receiveDataFromBluetooth()
-        {
-            byte[] buffer = new byte[256];
-            int bytes;
-            String readMessage;
-
-            try
-            {
-                 
-
-                //se leen los datos del Bluethoot
-                bytes = inputStream.read(buffer);
-                readMessage = new String(buffer, 0, bytes);
-                
-                
-            } catch (IOException e) 
-            {
-                System.out.println("Error en recepcion: "+e.getMessage().toString());
-                return null;
-            }
-            return readMessage;
-        }
 
         public void closeConnection()
         {
-            try 
-            {
                 
-                //cierro el socket del cliente telnet
-                clientTelnet.socketClose();
-                
-                //cierro el socket de bluetooth
-                connection.close();
-                System.out.println("Cerrando socket recepecion...");
-            } catch (IOException e) 
-            {
-                e.printStackTrace();
-            }
+            //cierro el socket del cliente telnet
+            clientTelnet.socketClose();
+            clientBluetooth.socketClose();            
+        
+            System.out.println("Cerrando socket recepecion...");
+        
         }
 
 }

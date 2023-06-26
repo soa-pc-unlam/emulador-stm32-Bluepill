@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -38,6 +39,8 @@ public class activity_comunicacion extends Activity
 
     private ConnectedThread mConnectedThread;
 
+    private ImageView imageView;
+
     // SPP UUID service  - Funciona en la mayoria de los dispositivos
     private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
@@ -54,7 +57,9 @@ public class activity_comunicacion extends Activity
         btnApagar=(Button)findViewById(R.id.btnApagar);
         btnEncender=(Button)findViewById(R.id.btnEncender);
         txtPotenciometro=(TextView)findViewById(R.id.txtValorPotenciometro);
+        imageView=(ImageView)findViewById(R.id.imageView4);
 
+        imageView.setImageResource(R.drawable.button_free);
         //obtengo el adaptador del bluethoot
         btAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -65,6 +70,7 @@ public class activity_comunicacion extends Activity
         //defino los handlers para los botones Apagar y encender
         btnEncender.setOnClickListener(btnEncenderListener);
         btnApagar.setOnClickListener(btnApagarListener);
+
 
     }
 
@@ -159,6 +165,11 @@ public class activity_comunicacion extends Activity
                     {
                         String dataInPrint = recDataString.substring(0, endOfLineIndex);
                         txtPotenciometro.setText(dataInPrint);
+
+                        if(dataInPrint.equals("Boton Presionado"))
+                            imageView.setImageResource(R.drawable.button_push);
+                        else
+                            imageView.setImageResource(R.drawable.button_free);
 
                         recDataString.delete(0, recDataString.length());
                     }
