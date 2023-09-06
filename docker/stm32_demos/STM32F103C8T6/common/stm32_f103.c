@@ -75,7 +75,6 @@ void enable_button_interrupts(void)
 }
 
 
-
 void init_rs232(void)
 {
     USART_InitTypeDef USART_InitStructure;

@@ -125,6 +125,7 @@ int verify_state_button()
     
     int current_value =sensors[SENSOR_BUTTON].current_value;
 
+    //myprintf(" ************************actual_boton:%d  prevoi_boton:%d\n",current_value,sensors[SENSOR_BUTTON].previous_value);
 
     int previous_value =sensors[SENSOR_BUTTON].previous_value;
     
@@ -132,15 +133,20 @@ int verify_state_button()
     
     if(current_value!=previous_value)
     {
-
+        //myprintf(" ************************actual_boton:%d  prevoi_boton:%d\n",current_value,sensors[SENSOR_BUTTON].previous_value);
         sensors[SENSOR_BUTTON].previous_value= current_value;
 
         if(current_value==PUSH)
         {
-
+            //myprintf("\n*******************EVENT PUSH************\n");
             event.type=EVENT_BUTTON_PUSH;
             
         }
+        /*else if (current_value==FREE)
+        {
+            event.type=EVENT_BUTTON_FREE;
+            //myprintf("\n*******************EVENT FREE************\n");
+        }*/
         return TRUE;
     }
 
@@ -158,12 +164,12 @@ int verify_state_bluetooth()
 
         if(receive_data==LED_ON)
         {
-
+            //myprintf("\n*******************PRENDE LED************\n");
             event.type=EVENT_LED_ON;
         }
         else if(receive_data==LED_OFF)
         {
-
+            //myprintf("\n*******************APAGA LED************\n");
             event.type=EVENT_LED_OFF;
         }
 
@@ -211,12 +217,14 @@ void state_machine()
             {
                 case(EVENT_CONTINUE):
                 {
+                 //   DebugPrintEstado("INIT","CONTINUE");
                     led_off();
                     state=STATE_FREE;
                     break;
                 }
                 default:            
-                     break;
+               //     myprintf("Error\r\n");    
+                    break;
             }
             
         }
@@ -244,7 +252,8 @@ void state_machine()
                     DebugPrintEstado("FREE","PUSH_BUTTON");
 
                     myprintf("Boton Presionado\r\n");
-            
+               //     send_byte('R');
+
                     TIM_Cmd(TIM2, ENABLE);
                     
                     state=STATE_PUSH;
@@ -252,11 +261,11 @@ void state_machine()
                 }
                 case(EVENT_CONTINUE):
                 {
-               
+                   // DebugPrintEstado("FREE","CONTINUE");
                     break;
                 }
                 default:            
-            
+             //       myprintf("Error\r\n");    
                     break;
             }
             
@@ -290,7 +299,7 @@ void state_machine()
                     DebugPrintEstado("BUTTON_PUSH","FREE");
 
                     myprintf("Boton Liberado\r\n");
-            
+                    //send_byte('F');
 
                     TIM_Cmd(TIM2, DISABLE);
                     
@@ -300,9 +309,11 @@ void state_machine()
                 }
                 case(EVENT_CONTINUE):
                 {
+                    //DebugPrintEstado("PUSH","CONTINUE");
                     break;
                 }
                 default:            
+                    //myprintf("Error\r\n");    
                     break;
             }
             

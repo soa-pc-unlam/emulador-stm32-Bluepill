@@ -24,7 +24,7 @@ CPFLAGS = -Obinary
 ODFLAGS	= -S
 
 # Declare library source paths
-SRC = ../../
+SRC = ../
 CORE_SRC = $(SRC)/libraries/CMSIS/CM3/CoreSupport
 DEVICE_SRC = $(SRC)/libraries/CMSIS/CM3/DeviceSupport/ST/STM32F10x
 STD_PERIPH = $(SRC)/libraries/STM32F10x_StdPeriph_Driver

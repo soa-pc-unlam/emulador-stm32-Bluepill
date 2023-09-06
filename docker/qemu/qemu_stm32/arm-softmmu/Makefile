@@ -1,1 +1,1 @@
-/soa-entorno-integracion/qemu/qemu_stm32/Makefile.target
+/emulador-stm32-Bluepill/docker/qemu/qemu_stm32/Makefile.target
