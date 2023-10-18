@@ -86,7 +86,12 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   /* USER CODE BEGIN 2 */
-  int state_button=0;
+  int last_button_state=0;
+  int new_button_state=0;
+
+  int state_led=GPIO_PIN_RESET;
+
+  last_button_state=HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -95,12 +100,20 @@ int main(void)
   {
     /* USER CODE END WHILE */
 
-	 state_button=HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0);
+	 new_button_state=HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0);
 
-	 if(state_button==1)
-		 HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
-	 else
-		 HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+	 if(new_button_state!=last_button_state)
+	 {
+		 if(new_button_state)
+		 {
+			 state_led=!state_led;
+			 HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, state_led);
+		 }
+
+
+
+	 }
+	 last_button_state=new_button_state;
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
