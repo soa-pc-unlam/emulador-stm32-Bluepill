@@ -66,8 +66,8 @@ all: main-build
 main-build: button.elf secondary-outputs
 
 # Tool invocations
-button.elf button.map: $(OBJS) $(USER_OBJS) C:\Users\User\STM32CubeIDE\workspace_1.13.2\button\STM32F103C8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "button.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\User\STM32CubeIDE\workspace_1.13.2\button\STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="button.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+button.elf button.map: $(OBJS) $(USER_OBJS) C:\STM32-Bluetooth-Qemu\emulador-stm32-Bluepill\docker\stm32_demos\STM32F103C6T6_HAL\button\STM32F103C8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "button.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\STM32-Bluetooth-Qemu\emulador-stm32-Bluepill\docker\stm32_demos\STM32F103C6T6_HAL\button\STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="button.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

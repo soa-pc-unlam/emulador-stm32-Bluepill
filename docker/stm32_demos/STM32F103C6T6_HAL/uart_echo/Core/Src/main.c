@@ -66,7 +66,7 @@ static void MX_USART1_UART_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	char Message[] = "Write anything on Serial Terminal\r\n"; /* Message to be transmitted through UART */
+x	char Message[] = "Write anything on Serial Terminal\r\n"; /* Message to be transmitted through UART */
 	uint8_t num = 0;
   /* USER CODE END 1 */
 
