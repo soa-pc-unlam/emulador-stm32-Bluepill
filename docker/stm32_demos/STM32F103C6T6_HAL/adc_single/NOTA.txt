@@ -1,0 +1,1 @@
+ En este ejemplo solo funciona un solo canal en qemu. Además para que funcione correctamente en el simulador, se debe comentar la linea  __HAL_ADC_CLEAR_FLAG(hadc, ADC_FLAG_AWD); dentro de las funciones HAL_ADC_PollForEvent y HAL_ADC_Start

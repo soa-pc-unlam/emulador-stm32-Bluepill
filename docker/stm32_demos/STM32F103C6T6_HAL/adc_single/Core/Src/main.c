@@ -108,25 +108,29 @@ int main(void)
   while (1)
   {
 
-/*	  ADC_Select_CHTemp();
+      ADC_Select_CH8();
 	  HAL_ADC_Start(&hadc1);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
 	  ADC_VAL[0] = HAL_ADC_GetValue(&hadc1);
 	  HAL_ADC_Stop(&hadc1);
 
-	  Temp = ((3.3*ADC_VAL[0]/4095 - V25)/Avg_Slope)+25;
-      sprintf(message, "Temperatura  = %d\r\n ",(int) Temp);
-      HAL_UART_Transmit(&huart1, message, sizeof(message), 100);
-*/
-      HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 
-      ADC_Select_CH8();
+	  sprintf(message, "Canal 8  = %d \r\n",(int) ADC_VAL[0]);
+      HAL_UART_Transmit(&huart1, message, sizeof(message), 100);
+
+
+/*	  ADC_Select_CHTemp();
 	  HAL_ADC_Start(&hadc1);
 	  HAL_ADC_PollForConversion(&hadc1, 1000);
 	  ADC_VAL[1] = HAL_ADC_GetValue(&hadc1);
 	  HAL_ADC_Stop(&hadc1);
-	  sprintf(message, "Canal 8  = %d \r\n",(int) ADC_VAL[1]);
+
+	  Temp = ((3.3*ADC_VAL[0]/4095 - V25)/Avg_Slope)+25;
+      sprintf(message, "Temperatura  = %d  ",(int) ADC_VAL[1]);
       HAL_UART_Transmit(&huart1, message, sizeof(message), 100);
+*/
+      HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+
 
 
 /*	  ADC_Select_CHVREF();
@@ -222,7 +226,7 @@ static void MX_ADC1_Init(void)
   */
   hadc1.Instance = ADC1;
   hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = ENABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
@@ -236,7 +240,7 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_8;
   sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_239CYCLES_5;
+  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -349,7 +353,7 @@ int  ADC_Select_CHTemp ()
 	  */
 	  sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
 	  sConfig.Rank = 1;
-	  sConfig.SamplingTime = ADC_SAMPLETIME_239CYCLES_5;
+	  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
 	  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
 	  {
 	    Error_Handler();
