@@ -233,9 +233,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	if(curr_char==-1)
 	{
-		in_char = (char)(huart1.Instance->DR);
-		//__HAL_UART_ENABLE_IT(&huart1, UART_IT_TXE);
 
+		//__HAL_UART_ENABLE_IT(&huart1, UART_IT_TXE);
 		curr_char=1;
 		HAL_UART_Transmit_IT(&huart1, &(out_str[0]),sizeof(out_str[curr_char]));
 		HAL_UART_Receive_IT(&huart1, &in_char, sizeof(in_char));
