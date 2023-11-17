@@ -18,10 +18,17 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
+#include "usart.h"
+#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "FreeRTOS.h"
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdarg.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -31,7 +38,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define SIZE_MSG_UART_TO_SEND 100
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -40,16 +47,16 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
-
+xQueueHandle chat_Qeue = NULL;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
-static void MX_USART1_UART_Init(void);
+void producter( void * Parameters);
+void consumer( void * Parameters);
+uint8_t myPrintf(const char *fmt, ...);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -66,8 +73,8 @@ static void MX_USART1_UART_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-x	char Message[] = "Write anything on Serial Terminal\r\n"; /* Message to be transmitted through UART */
-	uint8_t num = 0;
+  xTaskHandle xHandler_Producter;
+  xTaskHandle xHandler_Consumer;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -90,19 +97,22 @@ x	char Message[] = "Write anything on Serial Terminal\r\n"; /* Message to be tra
   MX_GPIO_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  HAL_UART_Transmit(&huart1, (uint8_t *)Message, strlen(Message), 10);
 
+  chat_Qeue= xQueueCreate(20,sizeof(int));
+
+  xTaskCreate(producter, "producter", 256, NULL, 1,&xHandler_Producter);
+  xTaskCreate(consumer, "consumer", 256, NULL, 1,&xHandler_Consumer);
+
+  vTaskStartScheduler();
   /* USER CODE END 2 */
 
+  /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
     /* USER CODE END WHILE */
-	uint8_t buffer[1];
 
-	HAL_UART_Receive(&huart1, buffer, sizeof(buffer), HAL_MAX_DELAY);
-	HAL_UART_Transmit(&huart1, buffer, sizeof(buffer), HAL_MAX_DELAY);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -144,60 +154,75 @@ void SystemClock_Config(void)
   }
 }
 
-/**
-  * @brief USART1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_USART1_UART_Init(void)
-{
-
-  /* USER CODE BEGIN USART1_Init 0 */
-
-  /* USER CODE END USART1_Init 0 */
-
-  /* USER CODE BEGIN USART1_Init 1 */
-
-  /* USER CODE END USART1_Init 1 */
-  huart1.Instance = USART1;
-  huart1.Init.BaudRate = 9600;
-  huart1.Init.WordLength = UART_WORDLENGTH_8B;
-  huart1.Init.StopBits = UART_STOPBITS_1;
-  huart1.Init.Parity = UART_PARITY_NONE;
-  huart1.Init.Mode = UART_MODE_TX_RX;
-  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
-  if (HAL_UART_Init(&huart1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USART1_Init 2 */
-
-  /* USER CODE END USART1_Init 2 */
-
-}
-
-/**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_GPIO_Init(void)
-{
-/* USER CODE BEGIN MX_GPIO_Init_1 */
-/* USER CODE END MX_GPIO_Init_1 */
-
-  /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOD_CLK_ENABLE();
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-
-/* USER CODE BEGIN MX_GPIO_Init_2 */
-/* USER CODE END MX_GPIO_Init_2 */
-}
-
 /* USER CODE BEGIN 4 */
+void producter( void * Parameters)
+{	int counter=0;
 
+
+	while(1)
+	{
+		myPrintf("productor envia: %d\r\n",counter);
+		xQueueSendToBack(chat_Qeue,(void *)&counter,10);
+		counter++;
+
+		vTaskDelay(1000);
+	}
+}
+
+void consumer( void * Parameters)
+{
+	int counter=0;
+
+	while(1)
+	{
+		while(!xQueueReceive(chat_Qeue,(void *)&counter ,0));
+
+		myPrintf("consumidor recibio:%d\r\n",counter);
+		vTaskDelay(1000);
+
+	}
+}
+
+uint8_t myPrintf(const char *fmt, ...) // custom printf() function
+{
+
+	char msg[SIZE_MSG_UART_TO_SEND]={0};
+	uint8_t result=0;
+
+	va_list argp;
+    va_start(argp, fmt);
+
+    //con vsnprintf se arma el msg sin peligro de producir oveflow
+    //debido a que se la cadena orignr es mas grande que el destino
+    //trunca al mensaje.
+    result=vsnprintf(msg, sizeof(msg),fmt,argp);
+    HAL_UART_Transmit(&huart1, msg, sizeof(msg), 100);
+    va_end(argp);
+
+    return result;
+}
 /* USER CODE END 4 */
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM2 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM2) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.

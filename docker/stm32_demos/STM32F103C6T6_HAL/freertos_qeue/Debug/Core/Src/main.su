@@ -1,0 +1,7 @@
+../Core/Src/main.c:73:5:main	24	static
+../Core/Src/main.c:125:6:SystemClock_Config	72	static
+../Core/Src/main.c:158:6:producter	24	static
+../Core/Src/main.c:172:6:consumer	24	static
+../Core/Src/main.c:186:9:myPrintf	120	static
+../Core/Src/main.c:214:6:HAL_TIM_PeriodElapsedCallback	16	static
+../Core/Src/main.c:231:6:Error_Handler	4	static,ignoring_inline_asm
