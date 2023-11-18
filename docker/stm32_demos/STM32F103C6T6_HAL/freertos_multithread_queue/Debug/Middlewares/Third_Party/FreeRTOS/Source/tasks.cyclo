@@ -20,7 +20,7 @@
 ../Middlewares/Third_Party/FreeRTOS/Source/tasks.c:2255:13:uxTaskGetNumberOfTasks	1
 ../Middlewares/Third_Party/FreeRTOS/Source/tasks.c:2263:7:pcTaskGetName	3
 ../Middlewares/Third_Party/FreeRTOS/Source/tasks.c:2583:12:xTaskIncrementTick	12
-../Middlewares/Third_Party/FreeRTOS/Source/tasks.c:2845:6:vTaskSwitchContext	4
+../Middlewares/Third_Party/FreeRTOS/Source/tasks.c:2845:6:vTaskSwitchContext	5
 ../Middlewares/Third_Party/FreeRTOS/Source/tasks.c:2904:6:vTaskPlaceOnEventList	2
 ../Middlewares/Third_Party/FreeRTOS/Source/tasks.c:2921:6:vTaskPlaceOnUnorderedEventList	3
 ../Middlewares/Third_Party/FreeRTOS/Source/tasks.c:2978:12:xTaskRemoveFromEventList	4

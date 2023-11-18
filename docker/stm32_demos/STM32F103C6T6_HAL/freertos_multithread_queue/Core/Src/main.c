@@ -19,6 +19,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "usart.h"
+#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -32,8 +34,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-char serial_ch_msg;
-char serial_str_msg[100];
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -42,45 +43,38 @@ char serial_str_msg[100];
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-UART_HandleTypeDef huart1;
 
-osThreadId Serial_Write_1Handle;
-uint32_t Serial_Write_1Buffer[ 512 ];
-osStaticThreadDef_t Serial_Write_1ControlBlock;
-osThreadId LedFlashHandle;
-uint32_t LedFlashBuffer[ 512 ];
-osStaticThreadDef_t LedFlashControlBlock;
-osThreadId Serial_Write_2Handle;
-uint32_t Serial_Write_2Buffer[ 512 ];
-osStaticThreadDef_t Serial_Write_2ControlBlock;
-osThreadId Serial_Xmit_StrHandle;
-uint32_t Serial_Xmit_StrBuffer[ 512 ];
-osStaticThreadDef_t Serial_Xmit_StrControlBlock;
-osThreadId Serial_Read_WriHandle;
-uint32_t Serial_Read_WriBuffer[ 512 ];
-osStaticThreadDef_t Serial_Read_WriControlBlock;
-osMessageQId serial_str_queueHandle;
-uint8_t serial_str_queueBuffer[ 10 * sizeof( char ) ];
-osStaticMessageQDef_t serial_str_queueControlBlock;
-osMessageQId serial_rx_queueHandle;
-uint8_t serial_rx_queueBuffer[ 1 * sizeof( char ) ];
-osStaticMessageQDef_t serial_rx_queueControlBlock;
-osSemaphoreId serial_tx_wait_semHandle;
 /* USER CODE BEGIN PV */
+volatile xQueueHandle serial_str_queue = NULL;
+volatile xSemaphoreHandle serial_tx_wait_sem = NULL;
+volatile xQueueHandle serial_rx_queue = NULL;
+
+/* Queue structure used for passing messages. */
+typedef struct
+{
+    char str[100];
+} serial_str_msg;
+
+/* Queue structure used for passing characters. */
+typedef struct
+{
+    char ch;
+} serial_ch_msg;
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
-void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
-static void MX_USART1_UART_Init(void);
-void queue_str_task1(void const * argument);
-void led_flash_task(void const * argument);
-void queue_str_task2(void const * argument);
-void rs232_xmit_msg_task(void const * argument);
-void serial_readwrite_task(void const * argument);
-
 /* USER CODE BEGIN PFP */
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart);
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart);
+void send_byte_rtos(char ch);
+char receive_byte_rtos(void);
+void led_flash_task( void *pvParameters );
+void rs232_xmit_msg_task( void *pvParameters );
+void queue_str_task(const char *str, int delay);
+void queue_str_task1( void *pvParameters );
+void queue_str_task2( void *pvParameters );
+void serial_readwrite_task( void *pvParameters );
 
 /* USER CODE END PFP */
 
@@ -96,7 +90,7 @@ void serial_readwrite_task(void const * argument);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+	serial_ch_msg rx_msg;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -119,71 +113,35 @@ int main(void)
   MX_GPIO_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+  HAL_UART_Receive_IT(&huart1,(void *)&(rx_msg.ch), sizeof(rx_msg.ch));
+
+  /* Create the queue to hold messages to be written to the RS232. */
+  serial_str_queue = xQueueCreate( 10, sizeof( serial_str_msg ) );
+  vSemaphoreCreateBinary(serial_tx_wait_sem);
+  serial_rx_queue = xQueueCreate( 1, sizeof( serial_ch_msg ) );
+
+  /* Create a task to flash the LED. */
+  xTaskCreate( led_flash_task,"LED Flash", 256, NULL, tskIDLE_PRIORITY + 5, NULL );
+
+  /* Create tasks to queue a string to be written to the RS232 port. */
+  xTaskCreate( queue_str_task1, "Serial Write 1", 256 , NULL, tskIDLE_PRIORITY + 10, NULL );
+  xTaskCreate( queue_str_task2, "Serial Write 2", 256 , NULL, tskIDLE_PRIORITY + 10, NULL );
+
+  /* Create a task to write messages from the queue to the RS232 port. */
+  xTaskCreate(rs232_xmit_msg_task, "Serial Xmit Str", 256 , NULL, tskIDLE_PRIORITY + 2, NULL );
+
+  /* Create a task to receive characters from the RS232 port and echo them back to the RS232 port. */
+  xTaskCreate(serial_readwrite_task, "Serial Read/Write", 256 ,NULL, tskIDLE_PRIORITY + 10, NULL );
+
+  /* Start running the tasks. */
+  vTaskStartScheduler();
+
 
   /* USER CODE END 2 */
 
-  /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
-
-  /* Create the semaphores(s) */
-  /* definition and creation of serial_tx_wait_sem */
-  osSemaphoreDef(serial_tx_wait_sem);
-  serial_tx_wait_semHandle = osSemaphoreCreate(osSemaphore(serial_tx_wait_sem), 1);
-
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
-
-  /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
-
-  /* Create the queue(s) */
-  /* definition and creation of serial_str_queue */
-  osMessageQStaticDef(serial_str_queue, 10, char, serial_str_queueBuffer, &serial_str_queueControlBlock);
-  serial_str_queueHandle = osMessageCreate(osMessageQ(serial_str_queue), NULL);
-
-  /* definition and creation of serial_rx_queue */
-  osMessageQStaticDef(serial_rx_queue, 1, char, serial_rx_queueBuffer, &serial_rx_queueControlBlock);
-  serial_rx_queueHandle = osMessageCreate(osMessageQ(serial_rx_queue), NULL);
-
-  /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
-
-  /* Create the thread(s) */
-  /* definition and creation of Serial_Write_1 */
-  osThreadStaticDef(Serial_Write_1, queue_str_task1, osPriorityNormal, 0, 512, Serial_Write_1Buffer, &Serial_Write_1ControlBlock);
-  Serial_Write_1Handle = osThreadCreate(osThread(Serial_Write_1), NULL);
-
-  /* definition and creation of LedFlash */
-  osThreadStaticDef(LedFlash, led_flash_task, osPriorityLow, 0, 512, LedFlashBuffer, &LedFlashControlBlock);
-  LedFlashHandle = osThreadCreate(osThread(LedFlash), NULL);
-
-  /* definition and creation of Serial_Write_2 */
-  osThreadStaticDef(Serial_Write_2, queue_str_task2, osPriorityLow, 0, 512, Serial_Write_2Buffer, &Serial_Write_2ControlBlock);
-  Serial_Write_2Handle = osThreadCreate(osThread(Serial_Write_2), NULL);
-
-  /* definition and creation of Serial_Xmit_Str */
-  osThreadStaticDef(Serial_Xmit_Str, rs232_xmit_msg_task, osPriorityLow, 0, 512, Serial_Xmit_StrBuffer, &Serial_Xmit_StrControlBlock);
-  Serial_Xmit_StrHandle = osThreadCreate(osThread(Serial_Xmit_Str), NULL);
-
-  /* definition and creation of Serial_Read_Wri */
-  osThreadStaticDef(Serial_Read_Wri, serial_readwrite_task, osPriorityLow, 0, 512, Serial_Read_WriBuffer, &Serial_Read_WriControlBlock);
-  Serial_Read_WriHandle = osThreadCreate(osThread(Serial_Read_Wri), NULL);
-
-  /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
-  /* USER CODE END RTOS_THREADS */
-
-  /* Start scheduler */
-  osKernelStart();
-
-  /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  HAL_UART_Receive_IT(&huart1, &serial_ch_msg, sizeof(serial_ch_msg));
+
 
   while (1)
   {
@@ -230,99 +188,38 @@ void SystemClock_Config(void)
   }
 }
 
-/**
-  * @brief USART1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_USART1_UART_Init(void)
-{
-
-  /* USER CODE BEGIN USART1_Init 0 */
-
-  /* USER CODE END USART1_Init 0 */
-
-  /* USER CODE BEGIN USART1_Init 1 */
-
-  /* USER CODE END USART1_Init 1 */
-  huart1.Instance = USART1;
-  huart1.Init.BaudRate = 9600;
-  huart1.Init.WordLength = UART_WORDLENGTH_8B;
-  huart1.Init.StopBits = UART_STOPBITS_1;
-  huart1.Init.Parity = UART_PARITY_NONE;
-  huart1.Init.Mode = UART_MODE_TX_RX;
-  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
-  if (HAL_UART_Init(&huart1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USART1_Init 2 */
-
-  /* USER CODE END USART1_Init 2 */
-
-}
-
-/**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_GPIO_Init(void)
-{
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-/* USER CODE BEGIN MX_GPIO_Init_1 */
-/* USER CODE END MX_GPIO_Init_1 */
-
-  /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin : PC13 */
-  GPIO_InitStruct.Pin = GPIO_PIN_13;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
-/* USER CODE BEGIN MX_GPIO_Init_2 */
-/* USER CODE END MX_GPIO_Init_2 */
-}
-
 /* USER CODE BEGIN 4 */
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-	static signed portBASE_TYPE xHigherPriorityTaskWoken;
+   static signed portBASE_TYPE xHigherPriorityTaskWoken;
+   //serial_ch_msg rx_msg;
 
-    xSemaphoreGiveFromISR(serial_tx_wait_semHandle, &xHigherPriorityTaskWoken);
+   xSemaphoreGiveFromISR(serial_tx_wait_sem, &xHigherPriorityTaskWoken);
 
-    if(xHigherPriorityTaskWoken)
-    {
-        taskYIELD();
-    }
-
+   if(xHigherPriorityTaskWoken)
+   {
+	 taskYIELD();
+   }
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	static signed portBASE_TYPE xHigherPriorityTaskWoken;
-	char rx_msg;
+   static signed portBASE_TYPE xHigherPriorityTaskWoken;
+   serial_ch_msg rx_msg;
 
-	/* Queue the received byte. */
-	if(!xQueueSendToBackFromISR(serial_rx_queueHandle, &rx_msg, &xHigherPriorityTaskWoken))
-	{
-		/* If there was an error queueing the received byte, freeze. */
-		while(1);
-	}
+   HAL_UART_Receive_IT(huart,(void *)&(rx_msg.ch), sizeof(rx_msg.ch));
 
-	if(xHigherPriorityTaskWoken)
-	{
-	      taskYIELD();
-	}
 
+   if(!xQueueSendToBackFromISR(serial_rx_queue, &rx_msg, &xHigherPriorityTaskWoken))
+   {
+	   /* If there was an error queueing the received byte, freeze. */
+	   while(1);
+   }
+
+   if(xHigherPriorityTaskWoken)
+   {
+      taskYIELD();
+   }
 }
 
 void send_byte_rtos(char ch)
@@ -331,146 +228,96 @@ void send_byte_rtos(char ch)
      * "given" by the RS232 port interrupt when the buffer has room for another
      * byte.
      */
-    while(!xSemaphoreTake(serial_tx_wait_semHandle, portMAX_DELAY));
+	while(!xSemaphoreTake(serial_tx_wait_sem,100));
+    //while(!xSemaphoreTake(serial_tx_wait_sem, HAL_MAX_DELAY));
 
     /* Send the byte and enable the transmit interrupt (it is disabled by the
      * interrupt).
      */
-    HAL_UART_Transmit_IT(&huart1,&ch,sizeof(ch));
-}
+	HAL_UART_Transmit_IT(&huart1,(uint8_t *)&ch, sizeof(ch));
+ }
 
 char receive_byte_rtos(void)
 {
-    char msg;
+    serial_ch_msg msg;
 
     /* Wait for a byte to be queued by the receive interrupt handler. */
-    while(!xQueueReceive(serial_rx_queueHandle, &serial_ch_msg, portMAX_DELAY));
+    while(!xQueueReceive(serial_rx_queue, &msg, HAL_MAX_DELAY));
 
-    return msg;
+    return msg.ch;
 }
 
+void led_flash_task( void *pvParameters )
+{
+    while(1)
+    {
+        /* Toggle the LED. */
+
+    	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+		/* Wait one second. */
+		vTaskDelay(1000);
+    }
+}
+
+void rs232_xmit_msg_task( void *pvParameters )
+{
+    serial_str_msg msg;
+    int curr_char;
+
+    while(1) {
+        /* Read from the queue.  Keep trying until a message is received.  This
+         * will block for a period of time (specified by portMAX_DELAY). */
+        while(!xQueueReceive(serial_str_queue, &msg, portMAX_DELAY));
+
+        /* Write each character of the message to the RS232 port. */
+        curr_char = 0;
+        while(msg.str[curr_char] != '\0') {
+            send_byte_rtos(msg.str[curr_char]);
+            curr_char++;
+        }
+    }
+}
 
 
 /* Repeatedly queues a string to be sent to the RS232.
  *   delay - the time to wait between sending messages.  A delay of 1 means
  *           wait 1/100th of a second.
  */
-void queue_str_task(const char str[], int delay)
+void queue_str_task(const char *str, int delay)
 {
+    serial_str_msg msg;
 
     /* Prepare the message to be queued. */
+    strcpy(msg.str, str);
 
-
-    while(1)
-    {
+    while(1) {
         /* Post the message.  Keep on trying until it is successful. */
-        while(!xQueueSendToBack(serial_str_queueHandle, str, portMAX_DELAY));
+        while(!xQueueSendToBack(serial_str_queue, &msg, portMAX_DELAY));
 
         /* Wait. */
         vTaskDelay(delay);
     }
-
-}
-/* USER CODE END 4 */
-
-/* USER CODE BEGIN Header_queue_str_task1 */
-/**
-  * @brief  Function implementing the Serial_Write_1 thread.
-  * @param  argument: Not used
-  * @retval None
-  */
-/* USER CODE END Header_queue_str_task1 */
-void queue_str_task1(void const * argument)
-{
-  /* USER CODE BEGIN 5 */
-  /* Infinite loop */
-   queue_str_task("Hola soy Tarea 1, probando ejecucion con FreeRTOS\n", 200);
-  /* USER CODE END 5 */
 }
 
-/* USER CODE BEGIN Header_led_flash_task */
-/**
-* @brief Function implementing the LedFlash thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_led_flash_task */
-void led_flash_task(void const * argument)
+void queue_str_task1( void *pvParameters )
 {
-  /* USER CODE BEGIN led_flash_task */
-  /* Infinite loop */
-  for(;;)
-  {
-	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-    osDelay(1000);
-  }
-  /* USER CODE END led_flash_task */
+    queue_str_task("Hola soy Tarea 1, probando ejecucion con FreeRTOS\r\n", 5000);
 }
 
-/* USER CODE BEGIN Header_queue_str_task2 */
-/**
-* @brief Function implementing the Serial_Write_2 thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_queue_str_task2 */
-void queue_str_task2(void const * argument)
+void queue_str_task2( void *pvParameters )
 {
-  /* USER CODE BEGIN queue_str_task2 */
-  /* Infinite loop */
-  queue_str_task("Hola soy Tarea 2, probando ejecucion con FreeRTOS\n", 50);
-  /* USER CODE END queue_str_task2 */
+    queue_str_task("Hola soy Tarea 2, probando ejecucion con FreeRTOS\r\n", 5000);
 }
 
-/* USER CODE BEGIN Header_rs232_xmit_msg_task */
-/**
-* @brief Function implementing the Serial_Xmit_Str thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_rs232_xmit_msg_task */
-void rs232_xmit_msg_task(void const * argument)
+void serial_readwrite_task( void *pvParameters )
 {
-  /* USER CODE BEGIN rs232_xmit_msg_task */
-  /* Infinite loop */
-    //serial_str_msg msg;
-    int curr_char;
-
-    while(1) {
-        /* Read from the queue.  Keep trying until a message is received.  This
-         * will block for a period of time (specified by portMAX_DELAY). */
-        while(!xQueueReceive(serial_str_queueHandle, serial_str_msg, portMAX_DELAY));
-
-        /* Write each character of the message to the RS232 port. */
-        curr_char = 0;
-        while(serial_str_msg[curr_char] != '\0') {
-            send_byte_rtos(serial_str_msg[curr_char]);
-            curr_char++;
-        }
-    }
-
-  /* USER CODE END rs232_xmit_msg_task */
-}
-
-/* USER CODE BEGIN Header_serial_readwrite_task */
-/**
-* @brief Function implementing the Serial_Read_Wri thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_serial_readwrite_task */
-void serial_readwrite_task(void const * argument)
-{
-  /* USER CODE BEGIN serial_readwrite_task */
-  /* Infinite loop */
-
-    //serial_str_msg msg;
+    serial_str_msg msg;
     char ch;
     int curr_char;
     int done;
 
     /* Prepare the response message to be queued. */
-    strcpy(serial_str_msg, "RV: ");
+    strcpy(msg.str, "RV: ");
 
     while(1) {
         curr_char = 4;
@@ -483,23 +330,24 @@ void serial_readwrite_task(void const * argument)
              * string and indicate we are done.
              */
             if((ch == '\r') || (ch == '\n')) {
-                serial_str_msg[curr_char] = '\n';
-                serial_str_msg[curr_char+1] = '\0';
+                msg.str[curr_char] = '\n';
+                msg.str[curr_char+1] = '\0';
                 done = -1;
             /* Otherwise, add the character to the response string. */
             } else {
-            	serial_str_msg[curr_char++] = ch;
+                msg.str[curr_char++] = ch;
             }
         } while(!done);
 
         /* Once we are done building the response string, queue the response to
          * be sent to the RS232 port.
          */
-        while(!xQueueSendToBack(serial_str_queueHandle, serial_str_msg, portMAX_DELAY));
+        while(!xQueueSendToBack(serial_str_queue, &msg, portMAX_DELAY));
     }
-
-  /* USER CODE END serial_readwrite_task */
 }
+
+
+/* USER CODE END 4 */
 
 /**
   * @brief  This function is executed in case of error occurrence.
