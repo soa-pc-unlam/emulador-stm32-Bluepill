@@ -52,6 +52,12 @@ default.size.stdout \
 OBJDUMP_LIST += \
 StateMachine-BT.list \
 
+OBJCOPY_HEX += \
+StateMachine-BT.hex \
+
+OBJCOPY_BIN += \
+StateMachine-BT.bin \
+
 
 # All Target
 all: main-build
@@ -75,12 +81,22 @@ StateMachine-BT.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
+StateMachine-BT.hex: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objcopy  -O ihex $(EXECUTABLES) "StateMachine-BT.hex"
+	@echo 'Finished building: $@'
+	@echo ' '
+
+StateMachine-BT.bin: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "StateMachine-BT.bin"
+	@echo 'Finished building: $@'
+	@echo ' '
+
 # Other Targets
 clean:
-	-$(RM) StateMachine-BT.elf StateMachine-BT.list StateMachine-BT.map default.size.stdout
+	-$(RM) StateMachine-BT.bin StateMachine-BT.elf StateMachine-BT.hex StateMachine-BT.list StateMachine-BT.map default.size.stdout
 	-@echo ' '
 
-secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)
+secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST) $(OBJCOPY_HEX) $(OBJCOPY_BIN)
 
 fail-specified-linker-script-missing:
 	@echo 'Error: Cannot find the specified linker script. Check the linker settings in the build configuration.'

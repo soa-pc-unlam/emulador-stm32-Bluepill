@@ -191,7 +191,7 @@ int verify_state_bluetooth()
 
 
 	/* Capture the received byte and print it out. */
-    HAL_UART_Receive(&huart1, &receive_data, sizeof(receive_data), 100);
+    HAL_UART_Receive(&huart1, &receive_data, sizeof(receive_data), 10);
 
 	if(receive_data==LED_ON)
 	{
@@ -427,7 +427,7 @@ int main(void)
   {
 
 	  state_machine();
-	  sleep();
+	  //sleep();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
