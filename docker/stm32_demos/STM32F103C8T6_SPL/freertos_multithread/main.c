@@ -51,7 +51,7 @@ void USART1_IRQHandler(void)
         if(!xQueueSendToBackFromISR(serial_rx_queue, &rx_msg, &xHigherPriorityTaskWoken)) {
             /* If there was an error queueing the received byte, freeze. */
             while(1);
-        }
+        }	
     } else {
         /* Only transmit and receive interrupts should be enabled.  If this is
          * another type of interrupt, freeze.
