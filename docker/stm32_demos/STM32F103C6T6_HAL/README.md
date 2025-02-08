@@ -1,7 +1,7 @@
 # Directorio con demos para la placa STM32F103C8T6. Tambien conocida como BluePill.
 
 Este directorio contiene un conjunto de ejemplos de código de Beckus, que fueron adaptados para que puedan funcionar con la placa BluePill en el simulador QEMU.
-Estos ejemplos estan realizados utilizando SPL.
+Estos ejemplos estan realizados utilizando HAL.
   
 **Listado de los ejemplos de còdigo que funcionan en Qemu con la placa BluePill**
 
@@ -10,13 +10,14 @@ Estos ejemplos estan realizados utilizando SPL.
 3. FreeRTOS_Streambuffer
 4. FreeRTOS_SingleThread
 5. FreeRTOS_multithread
-6. printf_demo
-7. software_int
-8. Systick
-9. timer
-10. uart_echo
-11. uart_echo_int (funciona pero pierde caracteres)
-12. uart_repeat_write
-13. button
-14. button_int
-15. StateMachine
+6. FreeRTOS_Semaphore
+7. FreeRTOS_qeue
+8. printf_demo
+9. Systick
+10. timer
+11. SerialDriver
+12. uart_echo
+13. uart_echo_int (funciona pero pierde caracteres)
+14. button
+15. button_int
+16. StateMachine
