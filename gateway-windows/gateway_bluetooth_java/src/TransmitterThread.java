@@ -17,33 +17,26 @@ public class TransmitterThread extends Thread
             }
         }
         //metodo run del hilo, que va a entrar en una espera activa para recibir los msjs del HC05
-        public void run()
-        {       
-            int i=0;
-            String message="";     
-            //el hilo secundario se queda esperando para evniar mensajes
-            while (!Thread.currentThread().isInterrupted())
-            {
-                try 
-                {     
-                    //recibe los datos de Qemu
-                    message = clientTelnet.receiveDataFromQemu();                
-
-                    //le transmite al bluetooth los datos que fueron recibidos desde qemu
+        public void run() {       
+            try {
+                while (!Thread.currentThread().isInterrupted()) {
+                    String message = clientTelnet.receiveDataFromQemu();
+                    
+                    //si hubo un problema en la recepcion del mensaje salgo del while
+                    if (message==null)
+                        break;
+                    
                     clientBluetooth.sendDataToBluetooth(message);
                     Thread.sleep(10);
                 }
-                catch (InterruptedException e) 
-                {
-                    //e.printStackTrace();
-                    System.out.println("Se interrumpio transmisor");
-                    break;
-                }
+            } catch (InterruptedException e) {
+                System.out.println("Transmitter interrupted");
+                Thread.currentThread().interrupt();
+            } finally {
+                //closeConnection();
             }
-            //System.out.println("Cerrando socket transmiscion...");
-            //closeConnection();
         }
-
+        
         
 
     

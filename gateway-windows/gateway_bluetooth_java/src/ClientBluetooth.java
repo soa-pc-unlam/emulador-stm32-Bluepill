@@ -49,7 +49,7 @@ public class ClientBluetooth {
     {
         byte[] buffer = new byte[256];
         int bytes;
-        String readMessage;
+        String readMessage=null;
 
         try
         {
@@ -57,12 +57,14 @@ public class ClientBluetooth {
 
             //se leen los datos del Bluethoot
             bytes = inputStream.read(buffer);
-            readMessage = new String(buffer, 0, bytes);
+            
+            if (bytes>0)
+                readMessage = new String(buffer, 0, bytes);
             
             
         } catch (IOException e) 
         {
-            System.out.println("Error en recepcion: "+e.getMessage().toString());
+            System.out.println("Error in reception: "+e.getMessage().toString());
             return null;
         }
         return readMessage;
@@ -82,14 +84,14 @@ public class ClientBluetooth {
         }
     }
 
-    public void socketClose()
-    {
-        //cierro el socket de bluetooth
+    public void socketClose() {
         try {
-            connection.close();
+            if (connection != null) {
+                connection.close();
+                System.out.println("Bluetooth socket closed successfully");
+            }
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            System.err.println("Error closing Bluetooth socket: " + e.getMessage());
         }
-    }        
+    }
 }

@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.io.InputStreamReader;
+import java.net.UnknownHostException;
 
 public class ClientTelnet 
 {
@@ -25,12 +26,11 @@ public class ClientTelnet
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-        } 
-        catch (Exception e) 
-        {
-            e.printStackTrace();
-        }   
-
+        } catch (UnknownHostException e) {
+            System.err.println("Host desconocido: " + e.getMessage());
+        } catch (IOException e) {
+            System.err.println("Error de conexión: " + e.getMessage());
+        }
     }
 
     public   void sendDataToQemu(String msg)
@@ -44,52 +44,49 @@ public class ClientTelnet
             e.printStackTrace(); 
         }
     }  
-    
-    public  String receiveDataFromQemu()
-     {
+    public String receiveDataFromQemu() {
         StringBuilder sb = new StringBuilder();
-        //BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-        long startTime = System.currentTimeMillis();
-        long timeout = 5000; // Tiempo límite en milisegundos (5 segundos en este caso)
-
+        
+        String resp=null;
         try {
             int character;
-            boolean foundNewLine = false;
-            
-            while ((character = in.read()) != -1) 
-            {
-                sb.append((char) character);
-                
-                if (character == '\n') 
-                {
-                    foundNewLine = true;
-                    break;
-                }   
-                
-                if (System.currentTimeMillis() - startTime > timeout) {
-                    break;
+            while (true) {
+                try {
+                    character = in.read();
+                    
+                    if (character == -1) {
+                        System.out.println("Conexión cerrada por el servidor.");
+                        break; 
+                    }
+    
+                    sb.append((char) character);
+    
+                    if (character == '\n') {
+                        break; 
+                    }
+    
+        
+                    resp=sb.toString();
+                } catch (IOException e) {
+                    System.out.println("Error de lectura, posible cierre de socket.");
+                    break; 
                 }
             }
-            
-            /*if (!foundNewLine) {
-                System.out.println("Timeout reached. Returning partial result.");
-            }*/
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        
-        return sb.toString();
+    
+        return resp;
     }
-
-    public void socketClose()
-    {
-        try
-        {
-            socket.close();
+    
+    public void socketClose() {
+        try {
+            if (socket != null) {
+                socket.close();
+                System.out.println("Bluetooth socket closed successfully");
+            }
+        } catch (IOException e) {
+            System.err.println("Error closing Bluetooth socket: " + e.getMessage());
         }
-        catch (Exception e) 
-        {
-            e.printStackTrace();
-        } 
     }
 }

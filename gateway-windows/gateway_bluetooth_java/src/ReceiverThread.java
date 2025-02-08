@@ -20,27 +20,20 @@ public class ReceiverThread extends Thread
         }
     
         //metodo run del hilo, que va a entrar en una espera activa para recibir los msjs del HC05
-        public void run()
-        {
-            String readMessage;
-            //el hilo secundario se queda esperando mensajes del HC05
-            while (!Thread.currentThread().isInterrupted())
-            {
-                //recive datos del bluetooth
-                readMessage=clientBluetooth.receiveDataFromBluetooth();
-                
-                if(readMessage.equals(null))
-                    break;
-                //le transmite a qemu los datos que fueron recibidos del bluetooth 
-                clientTelnet.sendDataToQemu(readMessage);
-
-                System.out.println(readMessage);
-                
+        public void run() {
+            try {
+                while (!Thread.currentThread().isInterrupted()) {
+                    String readMessage = clientBluetooth.receiveDataFromBluetooth();
+                    if (readMessage == null) break;
+                    clientTelnet.sendDataToQemu(readMessage);
+                }
+            } catch (Exception e) {
+                System.out.println("Error en ReceiverThread: " + e.getMessage());
+            } finally {
+                closeConnection();
             }
-
-           closeConnection();
-            
         }
+        
 
 
         public void closeConnection()
@@ -50,7 +43,7 @@ public class ReceiverThread extends Thread
             clientTelnet.socketClose();
             clientBluetooth.socketClose();            
         
-            System.out.println("Cerrando socket recepecion...");
+            System.out.println("Closing socket recpeption...");
         
         }
 
